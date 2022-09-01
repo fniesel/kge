@@ -317,7 +317,7 @@ class GraSHSearchJob(AutoSearchJob):
 
 class GraSHWorker(Worker):
     """
-    Class of a worker for the GraSH hyper-parameter optimization algorithm.
+    Class of a worker for the GraSH hyperparameter optimization algorithm.
     """
 
     def __init__(self, *args, **kwargs):
@@ -386,9 +386,8 @@ class GraSHWorker(Worker):
         #  else:
             # todo: delete checkpoint if parameters have changed
 
-        # scale given budget based on the max budget in terms of train runs
-        # -1 since we need one complete run in the last round so distribute rest over
-        # other rounds
+        # scale given budget based on the search budget in terms of full train runs on
+        # the whole graph
         if sh_iter < self.parent_job.sh_rounds:
             budget = budget * (self.parent_job.config.get(
                 "grash_search.search_budget") / self.parent_job.sh_rounds)
@@ -408,20 +407,23 @@ class GraSHWorker(Worker):
                 self.parent_job.config.get("train.max_epochs")
                 * budget
             )
-            print("num epochs", epochs)
+            # print("num epochs", epochs)
+            # todo: do we want to offer training of partial epochs? We do not train if no fitting subgraph is available.
             if epochs < 1:
                 max_batches = (
                     len(self.parent_job.dataset.split("train"))
                     / conf.get("train.batch_size")
                     * epochs
                 )
+                """
                 if "distributed" in conf.get("model"):
                     max_batches /= conf.get("job.distributed.num_partitions")
+                """
                 max_batches = max(1, math.floor(max_batches))
                 conf.set("train.max_batches", max_batches)
                 epochs = 1
             epochs = math.floor(epochs)
-            print("num epochs", epochs)
+            # print("num epochs", epochs)
 
         # determine the subset for this trial
         if self.parent_job.config.get("grash_search.variant") != "epoch":
@@ -446,7 +448,7 @@ class GraSHWorker(Worker):
             self.parent_job.dataset = self.parent_job.subsets[subset_index]
             conf = self.parent_job.modify_dataset_config(subset_index, conf)
 
-            # downscale number of negatives
+            # downscale number of negatives - todo: what if num_negatives is not part of the search space?
             number_samples_s = parameters.get("negative_sampling.num_samples.s")
             negatives_scaler = max(
                 self.parent_job.subset_stats[subset_index]["rel_entities"],
@@ -525,6 +527,7 @@ class GraSHWorker(Worker):
         """
 
         # todo: compute total number of trials in init
+        # todo: maybe rather print "<trial_id>/round 0,1,..."?
         num_train_trials = "x"
 
         # save config.yaml
@@ -552,6 +555,7 @@ class GraSHWorker(Worker):
                     "Could not copy predecessor checkpoint. Starting new round from scratch"
                 )
 
+        """
         # change port for distributed training
         if "distributed" in conf.get("model"):
             print("worker id", self.search_worker_id)
@@ -559,6 +563,7 @@ class GraSHWorker(Worker):
                 "job.distributed.master_port",
                 conf.get("job.distributed.master_port") + self.search_worker_id,
             )
+        """
 
         # run trial
         best = kge.job.search._run_train_job(

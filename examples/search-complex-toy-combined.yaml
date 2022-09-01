@@ -142,7 +142,7 @@ random_seed:
 search:
   device_pool:
   - cuda:0
-  num_workers: 1
+  num_workers: 4
   on_error: abort
   type: grash_search
 train:
