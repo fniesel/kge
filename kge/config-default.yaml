@@ -548,7 +548,7 @@ training_loss:
 # Options of hyperparameter search jobs (job.type=="search").
 search:
   # Type of search job (see respective configuration key). LibKGE ships with the
-  # following jobs: manual_search, grid_search, ax_search
+  # following jobs: manual_search, grid_search, ax_search, grash_search
   type: ax_search
 
   # Maximum number of parallel training jobs to run during a search.
@@ -616,6 +616,69 @@ ax_search:
   # https://ax.dev/api/service.html#module-ax.service.ax_client
   parameters: []
   parameter_constraints: []
+
+# todo: update, rename, and cleanup
+# Dynamic search job that picks configurations using HpBandSter
+grash_search:
+  class_name: GraSHSearchJob
+
+  # Nameserver configuration required by HPBandSter
+  run_id: ''
+  host: ''
+  port: ''
+
+  # todo: use seed from general configuration?
+  # Random seed for generating the trial configs
+  seed: 0
+
+  # Amount of trials to explore in the lowest fidelity round
+  num_trials: 64
+
+  # Maximal budget in terms of full train runs given for the complete search
+  search_budget: 4
+
+  # Eta for size and epoch budget. Budget will be shared equally between size and epochs.
+  eta: 4
+
+  # Only relevant for the dataset variant
+  # Metric to select subgraph
+  # - triples: amount of training triples in the subgraphs
+  # - triples_and_entities: relative amount of training triples * relative amount of entities
+  cost_metric: "triples"
+
+  # Initialize the models with the same values in each round
+  keep_initialization: true
+
+  # Only relevant for the dataset variant
+  # keep pretrained embeddings of smaller cores in higher rounds
+  keep_pretrained: false
+
+  # Only relevant for the dataset variant
+  # number of negatives are scaled down
+  # to avoid too few negatives set a minimum percentage of negatives to use
+  # to turn off scaling set min_negatives_percentage to 1.0
+  min_negatives_percentage: 0.01
+
+  # Possible options are:
+  # - 'combined': dynamically change epochs and graph size (50-50)
+  # - 'epoch': only change epochs and use full graph
+  # - 'graph': only change graph sizes and use static number of epochs
+  variant: 'graph'
+
+  # define successive halving round number as key and num distributed worker as value
+  # for each device assigned to a trial define two workers
+  # if nothing is defined do not use distributed setup
+  # NOTE: distributed_model needs to be imported in base config
+  #distributed_worker_per_round:
+  #  +++: +++
+
+  # define successive halving round number as key and num distributed worker as value
+  # NOTE: round numbers need to be provided as string so yaml reads it correctly
+  #num_search_worker_per_round:
+  #  +++: +++
+
+  # Search space definition passed to HPBandSter
+  parameters: []
 
 
 ## USER PARAMETERS #####################################################################

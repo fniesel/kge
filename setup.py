@@ -22,6 +22,11 @@ setup(
         # LibKGE uses numba typed-dicts which is part of the experimental numba API
         # see http://numba.pydata.org/numba-doc/0.50.1/reference/pysupported.html
         "numba==0.50.*",
+        "hpbandster",
+        "ConfigSpace",
+        "pytest-shutil",
+        "igraph",
+        "PyYAML",
     ],
     # Ax 0.1.10 requires python 3.7. Numba does not yet support for Python 3.9:
     # https://github.com/numba/numba/issues/6345
